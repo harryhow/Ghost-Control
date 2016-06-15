@@ -1,7 +1,7 @@
 from pymouse import PyMouse
 from pykeyboard import PyKeyboard
 import time
-# import serial
+import serial
 import sys
 import logging
 from watchdog.observers import Observer
@@ -9,11 +9,15 @@ from watchdog.events import LoggingEventHandler
 import watchdog.events
 
 
-
-# ser = serial.Serial('/dev/tty.usbmodem1421', 9600)
+ser = serial.Serial('/dev/tty.usbmodem1411', 9600)
 
 m = PyMouse()
 k = PyKeyboard()
+
+x_dim, y_dim = m.screen_size()
+print "screen size X:", x_dim
+print "screen size Y:", y_dim
+
 
 #while True:
     # ser.write('hello from Ghost\n')
@@ -28,8 +32,8 @@ class Handler(watchdog.events.PatternMatchingEventHandler):
         if event.src_path.lower().endswith('.lenna'):
                 self.process(event)
                 print "some one modify lenna, read file"
-                move_mouse.typeup()
-
+                move_mouse.clickPrinterDialog()
+                ser.write('HIT\n')
 
 
     def process(self, event):
@@ -45,10 +49,14 @@ class Handler(watchdog.events.PatternMatchingEventHandler):
 ###################################
 
 class MoveMouse():
-    x_dim, y_dim = m.screen_size()
-    print "screen size X:", x_dim
-    print "screen size Y:", y_dim
 
+    def clickPrinterDialog(self):
+        # need to calculate processing dialogue
+        index = 0
+        dialog_x_pos = 1140 #@1920
+        dialog_y_pos = 400 #@1080g'
+        print "= click printer dialog =", dialog_x_pos, dialog_y_pos
+        m.click(dialog_x_pos, dialog_y_pos, 1)
 
     def typeup(self):
         snippet_a = ['//Sketch A','float increment = 0.01;\r\n','float zoff = 0.0;\r\n','float zincrement = 0.02;\r\n']
