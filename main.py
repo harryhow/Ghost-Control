@@ -7,6 +7,9 @@ import logging
 from watchdog.observers import Observer
 from watchdog.events import LoggingEventHandler
 import watchdog.events
+from threading import Timer
+import os
+import threading
 
 
 ser = serial.Serial('/dev/tty.usbmodem1411', 9600)
@@ -18,22 +21,53 @@ x_dim, y_dim = m.screen_size()
 print "screen size X:", x_dim
 print "screen size Y:", y_dim
 
+class LennaTimer(object):
+    def __init__(self, interval, function, *args, **kwargs):
+        self._timer     = None
+        self.interval   = interval
+        self.function   = function
+        self.args       = args
+        self.kwargs     = kwargs
+        self.is_running = False
+        self.start()
 
-#while True:
-    # ser.write('hello from Ghost\n')
-    # time.sleep(1)
+    def _run(self):
+        self.is_running = False
+        self.start()
+        self.function(*self.args, **self.kwargs)
+
+    def start(self):
+        if not self.is_running:
+            self._timer = Timer(self.interval, self._run)
+            self._timer.start()
+            self.is_running = True
+
+    def stop(self):
+        self._timer.cancel()
+        self.is_running = False
+
+
 
 class Handler(watchdog.events.PatternMatchingEventHandler):
+
+
     def __init__(self):
-        watchdog.events.PatternMatchingEventHandler.__init__(self, patterns=['*.lenna'],
-            ignore_directories=True, case_sensitive=False)
+        print "watch dog init"
+        watchdog.events.PatternMatchingEventHandler.__init__(self, patterns=['*.lenna'],ignore_directories=True, case_sensitive=False)
+
 
     def on_modified(self, event):
+        print "on_modified..."
         if event.src_path.lower().endswith('.lenna'):
-                self.process(event)
-                print "some one modify lenna, read file"
-                move_mouse.clickPrinterDialog()
-                ser.write('HIT\n')
+            self.process(event)
+            print "some one modify lenna, read file"
+            move_mouse.clickPrinterDialog()
+            timer.stop()
+            ser.write('HIT\n')
+            # this will stop the timer
+            # time.sleep(5)
+            # os.system("lpr -P HP_ENVY_7640_series -o StpBorderless=True output.pdf") # TODO: borderless option
+            timer.start()
 
 
     def process(self, event):
@@ -42,6 +76,7 @@ class Handler(watchdog.events.PatternMatchingEventHandler):
 
 
     on_created = on_modified
+
 
 
 ###################################
@@ -69,8 +104,8 @@ class MoveMouse():
             k.type_string(val)
             time.sleep(1)
 
-    m.click(80, 100, 1)
-    k.press_keys(['Command','R'])
+        m.click(80, 100, 1)
+        k.press_keys(['Command','R'])
 
     def typebottom(self):
         snippet_b = ['float zoff = 0.0;\r\n','float zincrement = 0.2;\r\n','float increment = 0.1;\r\n', '//Sketch B']
@@ -89,24 +124,40 @@ class MoveMouse():
 
 
 
+def moveToNextProcessingWindow(name):
+    print "Hello %s!" % name
+
+
+move_mouse = MoveMouse()
+event_handler = Handler()
+timer = LennaTimer(10, moveToNextProcessingWindow, "window_one") # it auto-starts, no need of rt.start()
+
+
+#def main():
+    # t.start()
 
 
 
-logging.basicConfig(level=logging.INFO,
+if __name__ == "__main__":
+
+    logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
-path = '.'
-event_handler = Handler()
-move_mouse = MoveMouse()
-observer = Observer()
-observer.schedule(event_handler, path, recursive=True)
-observer.start()
-try:
-    while True:
-        time.sleep(1)
+    path = '.'
 
-except KeyboardInterrupt:
-    observer.stop()
-observer.join()
+    # move_mouse = MoveMouse()
+    observer = Observer()
+    observer.schedule(event_handler, path, recursive=True)
+    observer.start()
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+    observer.join()
 
+    timer.start()
+
+
+    # main()
 
