@@ -9,10 +9,14 @@ from watchdog.events import LoggingEventHandler
 import watchdog.events
 from threading import Timer
 import os
+import os.path
 import threading
 
-
-ser = serial.Serial('/dev/tty.usbmodem1411', 9600)
+try:
+    ser = serial.Serial('/dev/tty.usbmodem1411', 9600)
+except:
+    e = sys.exc_info()[0]
+    print e
 
 m = PyMouse()
 k = PyKeyboard()
@@ -20,6 +24,16 @@ k = PyKeyboard()
 x_dim, y_dim = m.screen_size()
 print "screen size X:", x_dim
 print "screen size Y:", y_dim
+
+current_window_ctr_x = 0
+current_window_ctr_y = 0
+dialog_x_pos = 1140 #@1920
+dialog_y_pos = 400 #@1080
+current_window = 0
+current_window_ctr_x = 0
+current_window_ctr_y = 0
+pdfpath = './output.pdf'
+
 
 class LennaTimer(object):
     def __init__(self, interval, function, *args, **kwargs):
@@ -61,12 +75,29 @@ class Handler(watchdog.events.PatternMatchingEventHandler):
         if event.src_path.lower().endswith('.lenna'):
             self.process(event)
             print "some one modify lenna, read file"
-            move_mouse.clickPrinterDialog()
+            # move_mouse.clickPrinterDialog()
             timer.stop()
-            ser.write('HIT\n')
+            try:
+                ser.write('HIT\n')
+            except:
+                e = sys.exc_info()[0]
+                print e
+
+            with open('printit.lenna') as f:
+                content = f.readlines()
+
+            print "file name: ", content[0]
+
             # this will stop the timer
             # time.sleep(5)
-            # os.system("lpr -P HP_ENVY_7640_series -o StpBorderless=True output.pdf") # TODO: borderless option
+            if os.path.isfile(pdfpath):
+                print "print PDF"
+                #os.system("lpr -P HP_ENVY_7640_series -o page-border=none output.pdf") # TODO: borderless option
+                # m.click(x_dim/2, y_dim/2, 1)
+                # k.press_keys(['Command','Q'])
+            else:
+                print "no PDF"
+
             timer.start()
 
 
@@ -86,66 +117,63 @@ class Handler(watchdog.events.PatternMatchingEventHandler):
 class MoveMouse():
 
     def clickPrinterDialog(self):
-        # need to calculate processing dialogue
-        index = 0
-        dialog_x_pos = 1140 #@1920
-        dialog_y_pos = 400 #@1080g'
-        print "= click printer dialog =", dialog_x_pos, dialog_y_pos
+        print "click printer dialog...", dialog_x_pos, dialog_y_pos
         m.click(dialog_x_pos, dialog_y_pos, 1)
 
-    def typeup(self):
-        snippet_a = ['//Sketch A','float increment = 0.01;\r\n','float zoff = 0.0;\r\n','float zincrement = 0.02;\r\n']
-        for index, val in enumerate(snippet_a):
-            yloc = 100+index*25
-            print "yloc:",yloc
-            m.click(80, yloc, 1)
-            #m.move(80, yloc)
-            #k.press_key('function')
-            k.type_string(val)
-            time.sleep(1)
-
-        m.click(80, 100, 1)
-        k.press_keys(['Command','R'])
-
-    def typebottom(self):
-        snippet_b = ['float zoff = 0.0;\r\n','float zincrement = 0.2;\r\n','float increment = 0.1;\r\n', '//Sketch B']
-        time.sleep(2)
-        for index, val in enumerate(snippet_b):
-            m.click(80, 650, 1)
-            yloc = 400+index*20
-            print "yloc:",yloc
-            m.click(80, yloc, 1)
-            m.move(80, yloc)
-            k.type_string(val)
-            time.sleep(1)
-
-        m.click(80, 650, 1)
-        k.press_keys(['Command','R'])
-
+    def typenrun(self):
+        print "move to window: ", current_window
+        print "window center is: ", current_window_ctr_x, "and ", current_window_ctr_y
+    # def typenrun(self):
+    #     snippet_a = ['//Sketch A','float increment = 0.01;\r\n','float zoff = 0.0;\r\n','float zincrement = 0.02;\r\n']
+    #     for index, val in enumerate(snippet_a):
+    #         #m.click(current_window_ctr_x, current_window_ctr_y, 1)
+    #         #m.move(80, yloc)
+    #         #k.press_key('function')
+    #         k.type_string(val)
+    #         time.sleep(1)
+    #
+        # m.click(current_window_ctr_x, current_window_ctr_y, 1)
+        # k.press_keys(['Command','R'])
 
 
 def moveToNextProcessingWindow(name):
-    print "Hello %s!" % name
+    print "+ Move to next"
+    global current_window
+    global current_window_ctr_x
+    global current_window_ctr_y
+
+    if (current_window < 4):
+        if (current_window == 0):
+            current_window_ctr_x = 0.25 * x_dim
+            current_window_ctr_y = 0.25 * y_dim
+        if (current_window == 1):
+            current_window_ctr_x = 0.75 * x_dim
+            current_window_ctr_y = 0.25 * y_dim
+        if (current_window == 2):
+            current_window_ctr_x = 0.25 * x_dim
+            current_window_ctr_y = 0.75 * y_dim
+        if (current_window == 3):
+            current_window_ctr_x = 0.75 * x_dim
+            current_window_ctr_y = 0.75 * y_dim
+    else:
+        current_window = 0
+
+    move_mouse.typenrun()
+    current_window = current_window + 1
+
 
 
 move_mouse = MoveMouse()
 event_handler = Handler()
-timer = LennaTimer(10, moveToNextProcessingWindow, "window_one") # it auto-starts, no need of rt.start()
-
-
-#def main():
-    # t.start()
-
+timer = LennaTimer(25, moveToNextProcessingWindow, "noname") # it auto-starts, no need of rt.start()
 
 
 if __name__ == "__main__":
-
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
     path = '.'
 
-    # move_mouse = MoveMouse()
     observer = Observer()
     observer.schedule(event_handler, path, recursive=True)
     observer.start()
@@ -157,7 +185,3 @@ if __name__ == "__main__":
     observer.join()
 
     timer.start()
-
-
-    # main()
-
