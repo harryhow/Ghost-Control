@@ -15,7 +15,7 @@
 .
 ├── README.md
 ├── day1
-│   └── 1622263439.pdf
+│ └── 1622263439.pdf
 ├── main-typing.py
 ├── main.py
 ├── printit.lenna
