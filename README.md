@@ -12,17 +12,6 @@
 4. Clear printer queue periodically
 
 ### Files
-.
-├── README.md
-├── day1
-│ └── 1622263439.pdf
-├── main-typing.py
-├── main.py
-├── printit.lenna
-└── test-solenoid.py
-
-1 directory, 6 files
-
 
 ### How To Setup and Use
 1. What should I setup before running?
