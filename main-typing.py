@@ -221,8 +221,8 @@ class MoveMouse():
         # make sure you click window
         if current_window == 0:
             m.click(0.25 * x_dim, 0.25 * y_dim, 1)
-
-        m.click(current_window_ctr_x, current_window_ctr_y, 1)
+        else:
+            m.click(current_window_ctr_x, current_window_ctr_y, 1)
 
         try:
             ser.write('HIT\n')
