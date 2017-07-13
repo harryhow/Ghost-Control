@@ -14,13 +14,21 @@
 ### Files
 
 ├── README.md
-├── day1
-│   ├── 161854522984.pdf
-│   └── 1622263439.pdf
-├── main-typing.py
-├── main.py
-├── printit.lenna
-└── test-solenoid.py
+
+├── day1 
+
+│   ├── 161854522984.pdf 
+
+│   └── 1622263439.pdf 
+
+├── main-typing.py 
+
+├── main.py 
+
+├── printit.lenna 
+
+└── test-solenoid.py 
+
 
 ### How To Setup and Use
 1. What should I setup before running?
